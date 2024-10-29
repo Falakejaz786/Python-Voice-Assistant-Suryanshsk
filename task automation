@@ -1,0 +1,67 @@
+import pyttsx3
+import speech_recognition as sr
+import schedule
+import time
+import datetime
+
+
+engine = pyttsx3.init()
+engine.setProperty('rate', 180)
+engine.setProperty('voice', engine.getProperty('voices')[1].id)  
+
+def speak(text):
+    engine.say(text)
+    engine.runAndWait()
+
+def listen():
+    r = sr.Recognizer()
+    with sr.Microphone() as source:
+        print("Listening...")
+        audio = r.listen(source)
+        try:
+            command = r.recognize_google(audio)
+            print(f"You said: {command}")
+            return command
+        except sr.UnknownValueError:
+            print("Sorry, I did not understand that.")
+            return ""
+        except sr.RequestError:
+            print("Could not request results; check your network connection.")
+            return ""
+
+def set_reminder(reminder_time, reminder_text):
+    schedule.every().day.at(reminder_time).do(lambda: speak(reminder_text))
+
+def set_alarm(alarm_time):
+    schedule.every().day.at(alarm_time).do(lambda: speak("Alarm! It's time!"))
+
+def voice_assistant():
+    speak("Hello! I am your voice assistant. How can I help you today?")
+
+    while True:
+        command = listen().lower()
+
+        if "set a reminder" in command:
+            speak("What time would you like to set the reminder for?")
+            reminder_time = listen()
+            speak("What would you like the reminder to say?")
+            reminder_text = listen()
+            set_reminder(reminder_time, reminder_text)
+            speak(f"Reminder set for {reminder_time} to say: {reminder_text}.")
+
+        elif "set an alarm" in command:
+            speak("What time would you like to set the alarm for?")
+            alarm_time = listen()
+            set_alarm(alarm_time)
+            speak(f"Alarm set for {alarm_time}.")
+
+        elif "exit" in command:
+            speak("Goodbye!")
+            break
+
+        while True:
+            schedule.run_pending()
+            time.sleep(1)
+
+if __name__ == "__main__":
+    voice_assistant()
